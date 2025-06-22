@@ -8,6 +8,9 @@ const CoursesTable = ({ onBack, editable = false }) => {
   const [loading, setLoading] = useState(true);
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editingCourseId, setEditingCourseId] = useState(null);
+
   const [addForm, setAddForm] = useState({
     title: '',
     courseId: '',
@@ -20,7 +23,7 @@ const CoursesTable = ({ onBack, editable = false }) => {
   const [addError, setAddError] = useState('');
   const [addLoading, setAddLoading] = useState(false);
 
-  const [deletePending, setDeletePending] = useState(null); // course object for modal
+  const [deletePending, setDeletePending] = useState(null);
   const [deleteConflictMessage, setDeleteConflictMessage] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -94,14 +97,23 @@ const CoursesTable = ({ onBack, editable = false }) => {
     e.preventDefault();
     setAddLoading(true);
     setAddError('');
-    axios.post('http://localhost:8081/api/courses', addForm)
+
+    const url = editMode
+      ? `http://localhost:8081/api/courses/${editingCourseId}`
+      : 'http://localhost:8081/api/courses';
+
+    const method = editMode ? axios.put : axios.post;
+
+    method(url, addForm)
       .then(() => {
         setShowAddModal(false);
         setAddForm({ title: '', courseId: '', description: '', academicYear: '', semester: '', prerequisiteIds: [] });
+        setEditMode(false);
+        setEditingCourseId(null);
         fetchCourses();
       })
-      .catch(err => {
-        setAddError('Error adding course.');
+      .catch(() => {
+        setAddError(editMode ? 'Error updating course.' : 'Error adding course.');
       })
       .finally(() => setAddLoading(false));
   };
@@ -117,7 +129,11 @@ const CoursesTable = ({ onBack, editable = false }) => {
 
         {editable && (
           <div style={{ display: 'flex', justifyContent: 'center', margin: '2rem 0' }}>
-            <button onClick={() => setShowAddModal(true)} style={{
+            <button onClick={() => {
+              setEditMode(false);
+              setAddForm({ title: '', courseId: '', description: '', academicYear: '', semester: '', prerequisiteIds: [] });
+              setShowAddModal(true);
+            }} style={{
               background: '#002366',
               color: '#fff',
               border: 'none',
@@ -177,7 +193,19 @@ const CoursesTable = ({ onBack, editable = false }) => {
                       <button
                         title="Edit"
                         style={{ marginRight: '0.5rem', fontSize: '1.1rem' }}
-                        onClick={() => alert('Edit functionality not implemented')}
+                        onClick={() => {
+                          setEditMode(true);
+                          setEditingCourseId(course.courseId);
+                          setAddForm({
+                            title: course.title,
+                            courseId: course.courseId,
+                            description: course.description,
+                            academicYear: course.academicYear,
+                            semester: course.semester,
+                            prerequisiteIds: prereqIdsOf(course),
+                          });
+                          setShowAddModal(true);
+                        }}
                       >✏️</button>
                       <button
                         title={isPrereqForOthers ? 'Cannot delete: course is a prerequisite for other courses.' : 'Delete'}
@@ -198,7 +226,7 @@ const CoursesTable = ({ onBack, editable = false }) => {
         </table>
       </div>
 
-      {/* Add Modal */}
+      {/* Add/Edit Modal */}
       {showAddModal && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -208,9 +236,11 @@ const CoursesTable = ({ onBack, editable = false }) => {
             background: '#fff', padding: '2rem', borderRadius: '10px',
             minWidth: '400px', maxWidth: '90vw', boxShadow: '0 0 20px rgba(0,0,0,0.3)'
           }}>
-            <h3 style={{ marginBottom: '1rem', color: '#002366' }}>Add New Course</h3>
+            <h3 style={{ marginBottom: '1rem', color: '#002366' }}>
+              {editMode ? 'Edit Course' : 'Add New Course'}
+            </h3>
             <input required placeholder="Title" style={modalInputStyle} value={addForm.title} onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))} />
-            <input required placeholder="Course ID" style={modalInputStyle} value={addForm.courseId} onChange={e => setAddForm(f => ({ ...f, courseId: e.target.value }))} />
+            <input required placeholder="Course ID" style={modalInputStyle} value={addForm.courseId} disabled={editMode} onChange={e => setAddForm(f => ({ ...f, courseId: e.target.value }))} />
             <input required type="number" placeholder="Year" style={modalInputStyle} value={addForm.academicYear} onChange={e => setAddForm(f => ({ ...f, academicYear: e.target.value }))} />
             <select required style={modalInputStyle} value={addForm.semester} onChange={e => setAddForm(f => ({ ...f, semester: e.target.value }))}>
               <option value="">Select Semester</option>
@@ -230,8 +260,14 @@ const CoursesTable = ({ onBack, editable = false }) => {
             <textarea required placeholder="Description" style={modalInputStyle} value={addForm.description} onChange={e => setAddForm(f => ({ ...f, description: e.target.value }))} />
             {addError && <div style={{ color: 'red', marginBottom: '1rem' }}>{addError}</div>}
             <div style={{ textAlign: 'right', marginTop: '1rem' }}>
-              <button type="button" style={{ marginRight: '1rem' }} onClick={() => setShowAddModal(false)}>Cancel</button>
-              <button type="submit" style={{ background: '#002366', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '5px' }}>{addLoading ? 'Adding...' : 'Add'}</button>
+              <button type="button" style={{ marginRight: '1rem' }} onClick={() => {
+                setShowAddModal(false);
+                setEditMode(false);
+                setEditingCourseId(null);
+              }}>Cancel</button>
+              <button type="submit" style={{ background: '#002366', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '5px' }}>
+                {addLoading ? (editMode ? 'Updating...' : 'Adding...') : (editMode ? 'Update' : 'Add')}
+              </button>
             </div>
           </form>
         </div>
