@@ -1,12 +1,28 @@
-# React + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+---
 
-Currently, two official plugins are available:
+## `README.md` for `courses-api-frontend` (React repo)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```markdown
+# Courses UI - Frontend
 
-## Expanding the ESLint configuration
+This is the frontend built using React (Vite) to manage courses and their delivery instances. It connects to the Spring Boot REST API backend.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Tech Stack
+
+- React (Vite)
+- TailwindCSS
+- Docker
+
+## DockerHub
+
+- [`aarushiitiwarii/courses-api-frontend`](https://hub.docker.com/r/aarushiitiwarii/courses-api-frontend)
+
+## Run via Docker
+
+This frontend is meant to be launched using `docker-compose.yml` from the backend repo.
+
+Or you can run it standalone:
+
+```bash
+docker run -p 5173:5173 aarushiitiwarii/courses-api-frontend
